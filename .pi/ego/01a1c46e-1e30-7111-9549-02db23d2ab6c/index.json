@@ -1,0 +1,208 @@
+{
+  "sessionId": "01a1c46e-1e30-7111-9549-02db23d2ab6c",
+  "createdAt": 1794299894311,
+  "shots": [
+    {
+      "id": 1,
+      "file": "/Users/huajiejun/github/vibe-kanban/.vibe-kanban-workspaces/bb8b/openidea/.pi/ego/01a1c46e-1e30-7111-9549-02db23d2ab6c/shots/0001.png",
+      "srcPath": "/var/folders/lp/m216x2f94rs7217_c_fcl0d80000gn/T/ego-browser-shot-633798.png",
+      "ts": 1794300261869,
+      "url": "http://localhost:1420/?demo=editor",
+      "title": "OpenIDEA",
+      "toolCallId": "call_17217010403725900973",
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    },
+    {
+      "id": 2,
+      "file": "/Users/huajiejun/github/vibe-kanban/.vibe-kanban-workspaces/bb8b/openidea/.pi/ego/01a1c46e-1e30-7111-9549-02db23d2ab6c/shots/0002.png",
+      "srcPath": "/var/folders/lp/m216x2f94rs7217_c_fcl0d80000gn/T/ego-browser-shot-926543.png",
+      "ts": 1794300306129,
+      "url": "http://localhost:1420/?demo=editor",
+      "title": "OpenIDEA",
+      "toolCallId": "call_9909003111843403184",
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    },
+    {
+      "id": 3,
+      "file": "/Users/huajiejun/github/vibe-kanban/.vibe-kanban-workspaces/bb8b/openidea/.pi/ego/01a1c46e-1e30-7111-9549-02db23d2ab6c/shots/0003.png",
+      "srcPath": "/var/folders/lp/m216x2f94rs7217_c_fcl0d80000gn/T/ego-browser-shot-669990.png",
+      "ts": 1794300318826,
+      "url": "http://localhost:1420/?demo=editor",
+      "title": "OpenIDEA",
+      "toolCallId": "call_8822892185224348371",
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    },
+    {
+      "id": 4,
+      "file": "/Users/huajiejun/github/vibe-kanban/.vibe-kanban-workspaces/bb8b/openidea/.pi/ego/01a1c46e-1e30-7111-9549-02db23d2ab6c/shots/0004.png",
+      "srcPath": "/var/folders/lp/m216x2f94rs7217_c_fcl0d80000gn/T/ego-browser-shot-384316.png",
+      "ts": 1794300610282,
+      "url": "http://localhost:1420/",
+      "title": "acme-api",
+      "toolCallId": "call_1790987529919279747",
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    }
+  ],
+  "spaces": [
+    {
+      "name": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c",
+      "action": "reuse",
+      "ts": 1794300255498
+    },
+    {
+      "name": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c",
+      "action": "reuse",
+      "ts": 1794300261868
+    },
+    {
+      "name": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c",
+      "action": "reuse",
+      "ts": 1794300267333
+    },
+    {
+      "name": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c",
+      "action": "reuse",
+      "ts": 1794300277730
+    },
+    {
+      "name": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c",
+      "action": "reuse",
+      "ts": 1794300288835
+    },
+    {
+      "name": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c",
+      "action": "reuse",
+      "ts": 1794300301355
+    },
+    {
+      "name": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c",
+      "action": "reuse",
+      "ts": 1794300306128
+    },
+    {
+      "name": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c",
+      "action": "reuse",
+      "ts": 1794300312118
+    },
+    {
+      "name": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c",
+      "action": "reuse",
+      "ts": 1794300318826
+    },
+    {
+      "name": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c",
+      "action": "reuse",
+      "ts": 1794300325206
+    },
+    {
+      "name": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c",
+      "action": "reuse",
+      "ts": 1794300330418
+    },
+    {
+      "name": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c",
+      "action": "reuse",
+      "ts": 1794300587625
+    },
+    {
+      "name": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c",
+      "action": "reuse",
+      "ts": 1794300593066
+    },
+    {
+      "name": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c",
+      "action": "reuse",
+      "ts": 1794300603895
+    },
+    {
+      "name": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c",
+      "action": "reuse",
+      "ts": 1794300610280
+    },
+    {
+      "name": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c",
+      "action": "reuse",
+      "ts": 1794300676220
+    }
+  ],
+  "navs": [
+    {
+      "url": "http://localhost:1420/?demo=editor",
+      "title": "OpenIDEA",
+      "ts": 1794300255498,
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    },
+    {
+      "url": "http://localhost:1420/?demo=editor",
+      "title": "OpenIDEA",
+      "ts": 1794300261868,
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    },
+    {
+      "url": "http://localhost:1420/?demo=editor",
+      "title": "OpenIDEA",
+      "ts": 1794300277730,
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    },
+    {
+      "url": "http://localhost:1420/?demo=editor",
+      "title": "OpenIDEA",
+      "ts": 1794300288858,
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    },
+    {
+      "url": "http://localhost:1420/?demo=editor",
+      "title": "OpenIDEA",
+      "ts": 1794300301356,
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    },
+    {
+      "url": "http://localhost:1420/?demo=editor",
+      "title": "OpenIDEA",
+      "ts": 1794300306128,
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    },
+    {
+      "url": "http://localhost:1420/?demo=editor",
+      "title": "OpenIDEA",
+      "ts": 1794300312119,
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    },
+    {
+      "url": "http://localhost:1420/?demo=editor",
+      "title": "OpenIDEA",
+      "ts": 1794300318826,
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    },
+    {
+      "url": "http://localhost:1420/?demo=editor",
+      "title": "OpenIDEA",
+      "ts": 1794300325206,
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    },
+    {
+      "url": "http://localhost:1420/",
+      "title": "OpenIDEA",
+      "ts": 1794300587626,
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    },
+    {
+      "url": "http://localhost:1420/",
+      "title": "acme-api",
+      "ts": 1794300593066,
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    },
+    {
+      "url": "http://localhost:1420/",
+      "title": "acme-api",
+      "ts": 1794300603896,
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    },
+    {
+      "url": "http://localhost:1420/",
+      "title": "acme-api",
+      "ts": 1794300610280,
+      "taskSpace": "pi-agent:01a1c46e-1e30-7111-9549-02db23d2ab6c"
+    }
+  ]
+}
