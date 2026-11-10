@@ -26,6 +26,11 @@ import { isTauri } from "./platform/ipc";
 import { hideSplash } from "./platform/splash";
 import { prefetchLazyComponents } from "./ui";
 import { installWindowDrag } from "./workbench/window-drag";
+import { StandaloneDemo } from "./vibe-editor/demo/StandaloneDemo";
+
+const isEditorDemo =
+  typeof window !== "undefined" &&
+  (window.location.search.includes("demo=editor") || window.location.hash.includes("editor-demo"));
 
 if (import.meta.env.DEV && isTauri()) {
   // The Tauri MCP bridge returns eval results via `window.__TAURI__` on Windows/Linux
@@ -60,6 +65,8 @@ if (aux?.kind === "settings") {
 } else if (aux?.kind === "deployment") {
   activateSecondaryWindow();
   activateDeploymentWindowFeatures(aux.parent);
+} else if (isEditorDemo) {
+  // Standalone VibeCodeEditor Demo
 } else {
   activateWorkbench();
   // `vite build --mode perf` is a production bundle for the performance harness (`perf/`).
@@ -84,6 +91,9 @@ function App() {
     // Views split out of the start-up bundle load in the background once the UI is up.
     if (!aux) return prefetchLazyComponents();
   }, []);
+  if (isEditorDemo) {
+    return <StandaloneDemo />;
+  }
   return aux?.kind === "settings" ? (
     <SettingsWindow />
   ) : aux?.kind === "comparison" ? (
