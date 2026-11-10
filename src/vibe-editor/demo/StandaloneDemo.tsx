@@ -1,9 +1,18 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { VibeCodeEditor } from "../VibeCodeEditor";
 import type { EditorFile } from "../types";
 import { DEMO_FILES } from "./demo-files";
+import styles from "./StandaloneDemo.module.css";
 
 export function StandaloneDemo() {
+  useEffect(() => {
+    const previous = document.documentElement.dataset.theme;
+    document.documentElement.dataset.theme = "dark";
+    return () => {
+      if (previous === undefined) delete document.documentElement.dataset.theme;
+      else document.documentElement.dataset.theme = previous;
+    };
+  }, []);
   const [files, setFiles] = useState<EditorFile[]>(DEMO_FILES);
   const [activeId, setActiveId] = useState<string>(DEMO_FILES[0]!.id);
   const [showSidebar, setShowSidebar] = useState(true);
@@ -74,6 +83,7 @@ export function Component${idx}() {
 
   return (
     <div
+      className={styles.demo}
       style={{
         display: "flex",
         flexDirection: "column",

@@ -1,4 +1,7 @@
 {
+  "Discard unsaved changes and close this file?": "Discard unsaved changes and close this file?",
+  "External changes conflict with unsaved edits. Reopen the file before saving.": "External changes conflict with unsaved edits. Reopen the file before saving.",
+  "Saving…": "Saving…",
   "GDB (C, C++)": "GDB (C, C++)",
   "Unknown error": "Unknown error",
   "Retry Loading Conversation": "Retry Loading Conversation",

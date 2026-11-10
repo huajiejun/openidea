@@ -1,4 +1,7 @@
 {
+  "Discard unsaved changes and close this file?": "放弃未保存的更改并关闭此文件？",
+  "External changes conflict with unsaved edits. Reopen the file before saving.": "外部更改与未保存的编辑冲突，请重新打开文件后再保存。",
+  "Saving…": "正在保存…",
   "GDB (C, C++)": "GDB（C、C++）",
   "Unknown error": "未知错误",
   "Retry Loading Conversation": "重新加载对话",

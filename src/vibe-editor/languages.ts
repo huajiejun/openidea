@@ -3,6 +3,7 @@ import { javascript } from "@codemirror/lang-javascript";
 import { html } from "@codemirror/lang-html";
 import { sass } from "@codemirror/lang-sass";
 import { languages } from "@codemirror/language-data";
+import { LanguageDescription } from "@codemirror/language";
 
 export function detectLanguageFromPath(path: string): string {
   const ext = path.split(".").pop()?.toLowerCase() || "";
