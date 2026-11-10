@@ -37,10 +37,16 @@ export default defineConfig(() => ({
   },
   // The app's own entry only: plugins' web pages (`plugins/**/web-src`) are
   // separate projects with their own dependencies, never part of this bundle.
-  optimizeDeps: { entries: ["index.html"] },
+  optimizeDeps: { entries: ["index.html", "vk.html"] },
   build: {
     target: "safari16",
     sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL("./index.html", import.meta.url)),
+        vk: fileURLToPath(new URL("./vk.html", import.meta.url)),
+      },
+    },
   },
   test: {
     environment: "jsdom",
