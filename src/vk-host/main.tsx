@@ -20,7 +20,15 @@ host.onStateChange((open) => {
   if (splash && open) delete splash.dataset.vkDisconnected;
 });
 
-const [{ hideSplash }] = await Promise.all([import("../platform/splash"), import("../main")]);
-// The upstream entry renders asynchronously; hide the splash once React mounts
-// (main.tsx does this for the desktop shell via hideSplash on mount).
-setTimeout(() => hideSplash?.(), 0);
+await import("../main");
+
+// VK embeds the IDE with a known workspace directory; open it automatically
+// instead of walking the user through the native folder dialog.
+const query = new URLSearchParams(window.location.search);
+const projectPath = query.get("vkProject");
+if (projectPath) {
+  const { commands, call } = await import("@/platform/ipc");
+  void call(commands.openProject(projectPath)).catch((error: unknown) => {
+    console.error("vk-host: open_project failed", error);
+  });
+}

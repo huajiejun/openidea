@@ -36,6 +36,8 @@ const RECONNECT_BASE_MS = 500;
 const RECONNECT_MAX_MS = 5000;
 
 export function defaultEndpoint(workspaceId: string): string {
+  const fromQuery = new URLSearchParams(window.location.search).get("vkEndpoint");
+  if (fromQuery) return fromQuery;
   const secure = window.location.protocol === "https:";
   return `${secure ? "wss" : "ws"}://${window.location.host}/api/workspaces/${workspaceId}/openidea/ws`;
 }
