@@ -18,17 +18,14 @@ host.onStateChange((open) => {
   const splash = document.getElementById("splash");
   if (splash && !open) splash.dataset.vkDisconnected = "true";
   if (splash && open) delete splash.dataset.vkDisconnected;
+  // VK embeds the IDE with a known workspace directory; open it automatically
+  // once the gateway is reachable instead of the native folder dialog.
+  const projectPath = new URLSearchParams(window.location.search).get("vkProject");
+  if (open && projectPath) {
+    void import("@/platform/ipc")
+      .then(({ commands, call }) => call(commands.openProject(projectPath)))
+      .catch((error: unknown) => console.error("vk-host: open_project failed", error));
+  }
 });
 
 await import("../main");
-
-// VK embeds the IDE with a known workspace directory; open it automatically
-// instead of walking the user through the native folder dialog.
-const query = new URLSearchParams(window.location.search);
-const projectPath = query.get("vkProject");
-if (projectPath) {
-  const { commands, call } = await import("@/platform/ipc");
-  void call(commands.openProject(projectPath)).catch((error: unknown) => {
-    console.error("vk-host: open_project failed", error);
-  });
-}
