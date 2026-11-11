@@ -23,6 +23,11 @@ host.onStateChange((open) => {
 // 先启动上游主入口
 await import("../main");
 
+// 确保整体采用暗黑风格（深色主题令牌与背景）
+const { useThemeOverride, applyThemeAttributes } = await import("@/workbench/theme");
+useThemeOverride.setState({ theme: "dark" });
+applyThemeAttributes("dark");
+
 // 关键安全策略适配：VK 在服务端已严格校验工作区边界，内嵌宿主中全部视为直接信任，
 // 彻底绕过桌面版 invokeLocal 与弹窗 promptForTrust 导致的永久挂起！
 const { provideProjectTrustPrompt } = await import("@/platform/projectTrust");
