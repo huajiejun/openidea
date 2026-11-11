@@ -53,6 +53,7 @@ export function resolveWorkspaceId(): string {
 
 export interface VkHostHandle {
   connect: () => void;
+  isConnected: () => boolean;
   onStateChange: (handler: (open: boolean) => void) => void;
   workspaceId: string;
 }
@@ -62,7 +63,8 @@ export function installVkHost(options: VkHostOptions): VkHostHandle {
   const pending = new Map<number, Pending>();
   const channels = new Map<number, Channel<unknown>>();
   const callbacks = new Map<number, (event: unknown) => void>();
-  const listeners = new Set<number>();
+  // 记录每个回调具体监听的事件名（如 "ide://event"），绝不串流给其他类型的监听器
+  const eventMap = new Map<number, string>();
   const label = options.windowLabel ?? "vk-openidea";
   let nextId = 1;
   let socket: WebSocket | null = null;
@@ -90,17 +92,29 @@ export function installVkHost(options: VkHostOptions): VkHostHandle {
       } catch {
         return;
       }
-      if (typeof message.method !== "string") return;
-      if (message.method === "channel") {
-        const params = message.params as { id: number; data: unknown };
-        const channel = channels.get(params.id);
-        if (!channel) return;
-        const data = typeof params.data === "string" ? JSON.parse(params.data) : params.data;
-        channel.onmessage(data);
-      } else if (message.method === "event") {
-        const params = message.params as { event: unknown };
-        // Tauri event handlers receive `{ payload }`; upstream filters by type.
-        for (const id of listeners) callbacks.get(id)?.({ payload: params.event });
+      if (typeof message.method === "string") {
+        if (message.method === "channel") {
+          const params = message.params as { id: number; data: unknown };
+          const channel = channels.get(params.id);
+          if (!channel) return;
+          const data = typeof params.data === "string" ? JSON.parse(params.data) : params.data;
+          channel.onmessage(data);
+        } else if (message.method === "event") {
+          const params = message.params as { event: unknown };
+          for (const [handlerId, eventName] of eventMap.entries()) {
+            if (eventName === "ide://event" || eventName === "*") {
+              try {
+                callbacks.get(handlerId)?.({
+                  event: "ide://event",
+                  id: handlerId,
+                  payload: params.event,
+                });
+              } catch (err) {
+                console.warn("vk-host: ide event callback error:", err);
+              }
+            }
+          }
+        }
       } else if (typeof message.id !== "undefined") {
         const id = message.id as number;
         const awaiting = pending.get(id);
@@ -182,7 +196,7 @@ export function installVkHost(options: VkHostOptions): VkHostHandle {
       callbacks.delete(id);
     },
     unregisterListener(event: string, id: number): void {
-      listeners.delete(id);
+      eventMap.delete(id);
       callbacks.delete(id);
     },
     convertFileSrc(filePath: string): string {
@@ -196,12 +210,13 @@ export function installVkHost(options: VkHostOptions): VkHostHandle {
         if (typeof handler !== "number") {
           return Promise.reject(new Error("vk-host: event listen without handler"));
         }
-        listeners.add(handler);
-        return Promise.resolve(1);
+        const eventName = typeof args?.event === "string" ? args.event : "ide://event";
+        eventMap.set(handler, eventName);
+        return Promise.resolve(handler);
       }
       if (cmd === "plugin:event|unlisten") {
         const handler = args?.handler;
-        if (typeof handler === "number") listeners.delete(handler);
+        if (typeof handler === "number") eventMap.delete(handler);
         return Promise.resolve(null);
       }
       if (cmd === "plugin:path|resolve_directory") {
@@ -227,6 +242,9 @@ export function installVkHost(options: VkHostOptions): VkHostHandle {
 
   return {
     connect,
+    isConnected() {
+      return !!socket && socket.readyState === WebSocket.OPEN;
+    },
     onStateChange(handler: (open: boolean) => void) {
       onStateChange.push(handler);
       handler(!!socket && socket.readyState === WebSocket.OPEN);

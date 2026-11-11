@@ -18,18 +18,34 @@ host.onStateChange((open) => {
   const splash = document.getElementById("splash");
   if (splash && !open) splash.dataset.vkDisconnected = "true";
   if (splash && open) delete splash.dataset.vkDisconnected;
-  // VK embeds the IDE with a known workspace directory; open it automatically
-  // once the gateway is reachable instead of the native folder dialog.
-  const projectPath = new URLSearchParams(window.location.search).get("vkProject");
-  if (open && projectPath) {
-    void import("@/platform/ipc")
-      .then(async ({ commands, call }) => {
-        // VK 已在服务端校验工作区边界；宿主内默认信任，避免阻塞在信任确认框。
-        await call(commands.projectTrustSet(projectPath, true, true));
-        await call(commands.openProject(projectPath));
-      })
-      .catch((error: unknown) => console.error("vk-host: open_project failed", error));
-  }
 });
 
+// 先启动上游主入口
 await import("../main");
+
+// 关键安全策略适配：VK 在服务端已严格校验工作区边界，内嵌宿主中全部视为直接信任，
+// 彻底绕过桌面版 invokeLocal 与弹窗 promptForTrust 导致的永久挂起！
+const { provideProjectTrustPrompt } = await import("@/platform/projectTrust");
+provideProjectTrustPrompt(async () => true);
+
+// 异步自动打开工作区工程：轮询等待网关连接建立，然后调用上游 project.ts 的 openProject
+void (async () => {
+  const projectPath = new URLSearchParams(window.location.search).get("vkProject");
+  if (!projectPath) return;
+
+  for (let i = 0; i < 50; i++) {
+    if (host.isConnected()) break;
+    await new Promise((r) => setTimeout(r, 200));
+  }
+
+  try {
+    const { invoke } = await import("@/platform/tauriCore");
+    await invoke("project_trust_set", { path: projectPath, trusted: true, folder: true }).catch(() => {});
+    const { openProject } = await import("@/platform/project");
+    console.info("vk-host: opening project in workbench:", projectPath);
+    const p = await openProject(projectPath);
+    console.info("vk-host: project opened successfully:", p.name || p.root);
+  } catch (error) {
+    console.error("vk-host: openProject failed:", error);
+  }
+})();
