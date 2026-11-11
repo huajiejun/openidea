@@ -38,8 +38,9 @@ const RECONNECT_MAX_MS = 5000;
 export function defaultEndpoint(workspaceId: string): string {
   const fromQuery = new URLSearchParams(window.location.search).get("vkEndpoint");
   if (fromQuery) return fromQuery;
-  const secure = window.location.protocol === "https:";
-  return `${secure ? "wss" : "ws"}://${window.location.host}/api/workspaces/${workspaceId}/openidea/ws`;
+  // 优先直连已知后端端口 3001，避免开发期 Vite dev server 的 WebSocket 代理断开
+  const host = window.location.hostname || "127.0.0.1";
+  return `ws://${host}:3001/api/workspaces/${workspaceId}/openidea/ws`;
 }
 
 export function resolveWorkspaceId(): string {
@@ -126,11 +127,24 @@ export function installVkHost(options: VkHostOptions): VkHostHandle {
   }
 
   function send(method: string, params: unknown): Promise<unknown> {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-      return Promise.reject(new Error("vk-host: gateway not connected"));
-    }
     const id = nextId++;
     const envelope = JSON.stringify({ id, method, params });
+    // 如果还没连接上，等待连接建立（最多等 10 秒），避免启动期命令被立即打回
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      return new Promise((resolve, reject) => {
+        let retries = 0;
+        const check = setInterval(() => {
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            clearInterval(check);
+            pending.set(id, { resolve, reject });
+            socket.send(envelope);
+          } else if (++retries > 50) {
+            clearInterval(check);
+            reject(new Error("vk-host: gateway connection timeout (10s)"));
+          }
+        }, 200);
+      });
+    }
     return new Promise((resolve, reject) => {
       pending.set(id, { resolve, reject });
       socket!.send(envelope);
@@ -167,6 +181,10 @@ export function installVkHost(options: VkHostOptions): VkHostHandle {
     unregisterCallback(id: number): void {
       callbacks.delete(id);
     },
+    unregisterListener(event: string, id: number): void {
+      listeners.delete(id);
+      callbacks.delete(id);
+    },
     convertFileSrc(filePath: string): string {
       // No asset protocol over the gateway; callers surface a clear gap.
       throw new Error(`vk-host: convertFileSrc unsupported for ${filePath}`);
@@ -186,6 +204,12 @@ export function installVkHost(options: VkHostOptions): VkHostHandle {
         if (typeof handler === "number") listeners.delete(handler);
         return Promise.resolve(null);
       }
+      if (cmd === "plugin:path|resolve_directory") {
+        return Promise.resolve("/tmp/openidea-user-data");
+      }
+      if (cmd.startsWith("plugin:window|is_")) {
+        return Promise.resolve(false);
+      }
       if (cmd.startsWith("plugin:")) {
         return Promise.reject(new Error(`vk-host: native capability not available in VK host: ${cmd}`));
       }
@@ -197,6 +221,9 @@ export function installVkHost(options: VkHostOptions): VkHostHandle {
     configurable: false,
     value: internals,
   });
+
+  // 装载时立即启动 WebSocket 连接
+  connect();
 
   return {
     connect,
