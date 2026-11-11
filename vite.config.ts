@@ -20,11 +20,23 @@ export default defineConfig(() => ({
   },
   // Tauri: keep Rust errors visible, fixed port, don't watch the backend.
   clearScreen: false,
+  // VK host: workbench is served under /ide/ both standalone and via the VK
+  // front-end proxy, so absolute asset URLs resolve in both hosts.
+  base: "/ide/",
   server: {
     port: 1420,
     strictPort: true,
     host: host || false,
     hmr: host ? { protocol: "ws", host } : undefined,
+    // VK browser host: same-origin WS proxy to the VK workspace gateway,
+    // so the workbench avoids cross-origin WebSocket issues in dev.
+    proxy: {
+      "/api": {
+        target: process.env.VK_GATEWAY_TARGET || "http://127.0.0.1:3001",
+        changeOrigin: true,
+        ws: true,
+      },
+    },
     watch: {
       ignored: [
         "**/src-tauri/**",
@@ -37,10 +49,16 @@ export default defineConfig(() => ({
   },
   // The app's own entry only: plugins' web pages (`plugins/**/web-src`) are
   // separate projects with their own dependencies, never part of this bundle.
-  optimizeDeps: { entries: ["index.html"] },
+  optimizeDeps: { entries: ["index.html", "vk.html"] },
   build: {
     target: "safari16",
     sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL("./index.html", import.meta.url)),
+        vk: fileURLToPath(new URL("./vk.html", import.meta.url)),
+      },
+    },
   },
   test: {
     environment: "jsdom",

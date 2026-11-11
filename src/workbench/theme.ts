@@ -63,7 +63,8 @@ export function resolveThemeChoice(a: AppearanceLike | undefined, systemLight: b
   const concrete = (v: string | undefined, d: "dark" | "light") => (isThemeChoiceId(v) ? v : d);
   if (a?.syncWithOs || a?.theme === "system")
     return systemLight ? concrete(a?.preferredLightTheme, "light") : concrete(a?.preferredDarkTheme, "dark");
-  return concrete(a?.theme, "light");
+  // 默认使用暗黑风格（VK 用户偏好与标准暗黑主题一致）
+  return concrete(a?.theme, "dark");
 }
 
 /**
