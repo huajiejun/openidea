@@ -153,6 +153,7 @@ export function installVkHost(options: VkHostOptions): VkHostHandle {
   const internals = {
     metadata: {
       currentWindow: { label },
+      currentWebview: { label, windowLabel: label },
       currentWebviewWindow: { label },
     },
     transformCallback(callback: (event: unknown) => void, once = false): number {

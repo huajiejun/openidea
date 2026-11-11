@@ -20,6 +20,9 @@ export default defineConfig(() => ({
   },
   // Tauri: keep Rust errors visible, fixed port, don't watch the backend.
   clearScreen: false,
+  // VK host: workbench is served under /ide/ both standalone and via the VK
+  // front-end proxy, so absolute asset URLs resolve in both hosts.
+  base: "/ide/",
   server: {
     port: 1420,
     strictPort: true,
