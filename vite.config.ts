@@ -28,6 +28,15 @@ export default defineConfig(() => ({
     strictPort: true,
     host: host || false,
     hmr: host ? { protocol: "ws", host } : undefined,
+    // VK browser host: same-origin WS proxy to the VK workspace gateway,
+    // so the workbench avoids cross-origin WebSocket issues in dev.
+    proxy: {
+      "/api": {
+        target: process.env.VK_GATEWAY_TARGET || "http://127.0.0.1:3001",
+        changeOrigin: true,
+        ws: true,
+      },
+    },
     watch: {
       ignored: [
         "**/src-tauri/**",

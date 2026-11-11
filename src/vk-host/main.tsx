@@ -23,7 +23,11 @@ host.onStateChange((open) => {
   const projectPath = new URLSearchParams(window.location.search).get("vkProject");
   if (open && projectPath) {
     void import("@/platform/ipc")
-      .then(({ commands, call }) => call(commands.openProject(projectPath)))
+      .then(async ({ commands, call }) => {
+        // VK 已在服务端校验工作区边界；宿主内默认信任，避免阻塞在信任确认框。
+        await call(commands.projectTrustSet(projectPath, true, false));
+        await call(commands.openProject(projectPath));
+      })
       .catch((error: unknown) => console.error("vk-host: open_project failed", error));
   }
 });
