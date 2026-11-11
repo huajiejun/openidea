@@ -38,9 +38,13 @@ const RECONNECT_MAX_MS = 5000;
 export function defaultEndpoint(workspaceId: string): string {
   const fromQuery = new URLSearchParams(window.location.search).get("vkEndpoint");
   if (fromQuery) return fromQuery;
-  // 优先直连已知后端端口 3001，避免开发期 Vite dev server 的 WebSocket 代理断开
-  const host = window.location.hostname || "127.0.0.1";
-  return `ws://${host}:3001/api/workspaces/${workspaceId}/openidea/ws`;
+  // 默认跟随当前页面的协议与 host（生产同源反代、HTTPS 自动 wss）；
+  // 仅本地分端口调试（1420/60773 前端 + 3001 后端）才直连 3001。
+  const secure = window.location.protocol === "https:";
+  const port = window.location.port;
+  const splitPortDev = port === "1420" || port === "60773";
+  const host = splitPortDev ? `${window.location.hostname || "127.0.0.1"}:3001` : window.location.host;
+  return `${secure ? "wss" : "ws"}://${host}/api/workspaces/${workspaceId}/openidea/ws`;
 }
 
 export function resolveWorkspaceId(): string {
@@ -195,7 +199,7 @@ export function installVkHost(options: VkHostOptions): VkHostHandle {
     unregisterCallback(id: number): void {
       callbacks.delete(id);
     },
-    unregisterListener(event: string, id: number): void {
+    unregisterListener(_event: string, id: number): void {
       eventMap.delete(id);
       callbacks.delete(id);
     },
