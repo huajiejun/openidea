@@ -22,11 +22,13 @@
 //! keychain and are asked for with a `plugin_secret` request
 //! ([`SecretRequest`]) when a request header needs one (rule 4).
 
-use super::{Consent, HostWorkspace, PluginEditor, PluginEvent, PluginHost, PluginSource, SecretStore};
+use super::{
+    Consent, HostWorkspace, OFFICIAL_MARKET_INDEX, PluginEditor, PluginEvent, PluginHost, PluginSource, SecretStore,
+};
 use crate::rpc::Dispatcher;
 use base64::Engine as _;
 use ide_core::{IdeError, IdeResult};
-use ide_extension::{MANIFEST_FILE, ledger};
+use ide_extension::{ActivationEvent, MANIFEST_FILE, ledger};
 use ide_jsonrpc::Peer;
 use ide_plugin::{Invocation, Limits};
 use ide_workspace::settings::SettingsScope;
@@ -292,6 +294,10 @@ impl RemotePlugins {
             }
         };
         let host = Arc::new(PluginHost::new(data_dir.join(PLUGINS_DIR), Arc::new(sink), Limits::default())?);
+        // Remote windows manage plugins here too (the desktop shell does it
+        // locally): marketplace + install + theme choices persist under the
+        // server's data dir instead of vanishing on every client reconnect.
+        host.set_default_market_url(Some(OFFICIAL_MARKET_INDEX.into()));
         host.set_net_hosts_session_only();
         projects.set_plugin_host(&host);
         host.set_workspace(Some(Arc::new(HostWorkspace(Arc::downgrade(projects)))));
@@ -777,7 +783,243 @@ impl RemotePlugins {
         d.add("plugin_line_markers", |c| async move {
             crate::ops::lsp::plugin_line_markers(&c.host, &c.window, c.arg("doc")?).await
         });
+        register_management(d, &host);
     }
+}
+
+/// How long `plugin_list` waits for the startup rescan before answering.
+const INITIAL_LOAD_WAIT: Duration = Duration::from_secs(5);
+
+/// Local plugin catalog dirs, beyond the marketplace (`OPENIDEA_CATALOG_DIR`).
+fn catalog_dirs() -> Vec<PathBuf> {
+    std::env::var_os("OPENIDEA_CATALOG_DIR").map(PathBuf::from).into_iter().collect()
+}
+
+/// Plugin-management commands the desktop shell answers locally: list, install
+/// (marketplace / package / staged), enable, capabilities, themes. The remote
+/// window's state persists in the server's data dir across reconnects.
+fn register_management(d: &mut Dispatcher, host: &std::sync::Weak<PluginHost>) {
+    let h = host.clone();
+    d.add("plugin_list", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let root = c.host.project(&c.window).ok().map(|p| p.root.clone());
+            blocking(move || {
+                host.wait_initial_load(INITIAL_LOAD_WAIT);
+                host.sync_links();
+                if let Some(root) = &root {
+                    host.sync_project(root);
+                }
+                Ok(host.list(root.as_deref()))
+            })
+            .await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_set_enabled", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let id: String = c.arg("id")?;
+            let enabled: bool = c.arg("enabled")?;
+            blocking(move || host.set_enabled(&id, enabled)).await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_preview_install", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let path: PathBuf = c.arg("path")?;
+            blocking(move || host.preview_install(&path)).await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_install_dir", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let path: PathBuf = c.arg("path")?;
+            let consent: Consent = c.arg("consent")?;
+            blocking(move || host.install_from_dir(&path, &consent)).await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_grant", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let id: String = c.arg("id")?;
+            let consent: Consent = c.arg("consent")?;
+            blocking(move || host.grant(&id, &consent)).await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_set_capability", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let id: String = c.arg("id")?;
+            let capability: String = c.arg("capability")?;
+            let granted: bool = c.arg("granted")?;
+            blocking(move || host.set_capability(&id, &capability, granted)).await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_revoke_net_host", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let id: String = c.arg("id")?;
+            let net_host: String = c.arg("host")?;
+            blocking(move || host.revoke_net_host(&id, &net_host)).await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_assets", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let plugin_id: String = c.arg("pluginId")?;
+            let prefix: String = c.arg("prefix")?;
+            blocking(move || host.assets(&plugin_id, &prefix)).await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_activation_event", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let kind: String = c.arg("kind")?;
+            let value: String = c.arg("value")?;
+            let event = match kind.as_str() {
+                "language" => ActivationEvent::Language(value),
+                "file" => ActivationEvent::File(value),
+                "view" => ActivationEvent::View(value),
+                other => return Err(IdeError::invalid(format!("unknown activation event kind {other:?}"))),
+            };
+            let project = c.host.project(&c.window).ok();
+            if project.as_ref().is_some_and(|p| !p.is_trusted()) {
+                return Ok(()); // Restricted Mode: no plugin code runs for this project.
+            }
+            blocking(move || {
+                host.activation_event(&event, project.as_ref().map(|p| p.root.as_path()));
+                Ok(())
+            })
+            .await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_catalog", move |_| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let dirs = catalog_dirs();
+            blocking(move || Ok(host.catalog(&dirs))).await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_uninstall", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let id: String = c.arg("id")?;
+            blocking(move || host.uninstall(&id)).await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_reload", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let id: String = c.arg("id")?;
+            blocking(move || host.reload(&id)).await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_set_theme", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let plugin_id: Option<String> = c.arg("pluginId")?;
+            let theme_id: Option<String> = c.arg("themeId")?;
+            blocking(move || host.set_theme(plugin_id.as_deref().zip(theme_id.as_deref()))).await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_set_theme_frame", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let color: Option<String> = c.arg("color")?;
+            blocking(move || host.set_theme_frame(color.as_deref())).await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_market", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let refresh: bool = c.arg("refresh")?;
+            blocking(move || host.market_listing(refresh)).await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_market_url", move |_| {
+        let h = h.clone();
+        async move { Ok(alive(&h)?.market_url()) }
+    });
+    let h = host.clone();
+    d.add("plugin_set_market_url", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let url: Option<String> = c.arg("url")?;
+            blocking(move || {
+                host.set_market_url(url);
+                Ok(())
+            })
+            .await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_market_download", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let id: String = c.arg("id")?;
+            blocking(move || host.download_market_plugin(&id)).await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_unpack_package", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let path: PathBuf = c.arg("path")?;
+            blocking(move || host.unpack_package(&path)).await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_stage_package", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let name: String = c.arg("name")?;
+            let files: Vec<super::types::PackageFile> = c.arg("files")?;
+            blocking(move || host.stage_package(&name, files.as_slice())).await
+        }
+    });
+    let h = host.clone();
+    d.add("plugin_roll_back", move |c| {
+        let h = h.clone();
+        async move {
+            let host = alive(&h)?;
+            let id: String = c.arg("id")?;
+            blocking(move || host.roll_back_update(&id)).await
+        }
+    });
 }
 
 fn alive(host: &Weak<PluginHost>) -> IdeResult<Arc<PluginHost>> {
